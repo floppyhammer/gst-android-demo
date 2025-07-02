@@ -104,9 +104,19 @@ void onAppCmd(struct android_app *app, int32_t cmd) {
 #endif
 
             // Set up gst logger
-//            gst_debug_set_default_threshold(GST_LEVEL_WARNING);
+            //            gst_debug_set_default_threshold(GST_LEVEL_WARNING);
             //		gst_debug_set_threshold_for_name("webrtcbin", GST_LEVEL_MEMDUMP);
             //      gst_debug_set_threshold_for_name("webrtcbindatachannel", GST_LEVEL_TRACE);
+
+            // Set rank for decoder c2qtiavcdecoder
+            GstRegistry *plugins_register = gst_registry_get();
+            GstPluginFeature *dec = gst_registry_lookup_feature(plugins_register, "amcviddec-c2qtiavcdecoder");
+            if (dec == NULL) {
+                ALOGW("c2qtiavcdecoder not available!");
+            } else {
+                gst_plugin_feature_set_rank(dec, GST_RANK_PRIMARY + 1);
+                gst_object_unref(dec);
+            }
 
             stream_app = stream_app_new();
             stream_app_set_egl_context(stream_app,
@@ -209,9 +219,9 @@ void android_main(struct android_app *app) {
 
         eglSwapBuffers(initialEglData->display, initialEglData->surface);
 
+        // Release the previous sample
         if (prev_sample != NULL) {
             stream_app_release_sample(stream_app, prev_sample);
-            prev_sample = NULL;
         }
         prev_sample = sample;
 

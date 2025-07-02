@@ -14,12 +14,6 @@ android {
     ndkVersion project.ndkVersion
 
     defaultConfig {
-//        todo
-//        python {
-//            pip {
-//                install "nanopb"
-//            }
-//        }
         applicationId "com.gst.android.demo"
         minSdkVersion 26
         targetSdkVersion 33
@@ -28,7 +22,7 @@ android {
 
         externalNativeBuild {
             cmake {
-                arguments '-DANDROID_STL=c++_shared', "-DEIGEN3_INCLUDE_DIR=${project.eigenIncludeDir}", project.gstreamerCMakeArg
+                arguments '-DANDROID_STL=c++_shared', project.gstreamerCMakeArg
 
             }
             ndk {
@@ -58,7 +52,6 @@ android {
 }
 
 dependencies {
-    implementation 'org.khronos.openxr:openxr_loader_for_android:1.0.28.2'
     implementation 'androidx.core:core-ktx:1.10.1'
     implementation project(path: ':gstreamer_java')
 }

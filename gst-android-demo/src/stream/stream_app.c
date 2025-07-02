@@ -332,22 +332,6 @@ static GstFlowReturn on_new_sample_cb(GstAppSink *appsink, gpointer user_data) {
     return GST_FLOW_OK;
 }
 
-static GstPadProbeReturn buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
-    if (info->type & GST_PAD_PROBE_TYPE_BUFFER) {
-        GstBuffer *buf = GST_PAD_PROBE_INFO_BUFFER(info);
-        GstClockTime pts = GST_BUFFER_PTS(buf);
-
-        static GstClockTime previous_pts = 0;
-        static int64_t previous_time = 0;
-        if (previous_pts != 0) {
-            int64_t pts_diff = (pts - previous_pts) / 1e6;
-            ALOGD("Received frame PTS: %" GST_TIME_FORMAT ", PTS diff: %ld", GST_TIME_ARGS(pts), pts_diff);
-        }
-        previous_pts = pts;
-    }
-    return GST_PAD_PROBE_OK;
-}
-
 static gboolean print_stats(StreamApp *app) {
     if (!app) {
         return G_SOURCE_CONTINUE;
@@ -394,16 +378,11 @@ static void create_pipeline_rtp(StreamApp *app) {
     GError *error = NULL;
 
     gchar *pipeline_string = g_strdup_printf(
-        "udpsrc port=5000 caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264\" ! "
-        "rtpstorage size-time=220000000 ! "
-        "rtpssrcdemux ! "
-        "application/x-rtp,clock-rate=90000,media=video,encoding-name=H264 ! "
+        "udpsrc port=5000 buffer-size=10000000 "
+        "caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264\" ! "
         "rtpjitterbuffer do-lost=1 latency=5 ! "
-        "rtpptdemux name=rtpptdemux ! "
-        "rtpulpfecdec pt=122 name=ulpfec ! "
-        "rtph264depay ! "
         "decodebin3 ! "
-        "glsinkbin sync=false name=glsink");
+        "glsinkbin name=glsink");
 
     app->pipeline = gst_object_ref_sink(gst_parse_launch(pipeline_string, &error));
     if (app->pipeline == NULL) {
@@ -413,25 +392,6 @@ static void create_pipeline_rtp(StreamApp *app) {
     if (error) {
         ALOGE("Error creating a pipeline from string: %s", error ? error->message : "Unknown");
         abort();
-    }
-
-    {
-        GValue v = G_VALUE_INIT;
-        GValue v2 = G_VALUE_INIT;
-        g_value_init(&v, GST_TYPE_ARRAY);
-        g_value_init(&v2, G_TYPE_INT);
-
-        GstElement *rtpptdemux = gst_bin_get_by_name(GST_BIN(app->pipeline), "rtpptdemux");
-
-        g_object_get_property(G_OBJECT(rtpptdemux), "ignored-payload-types", &v);
-
-        g_value_set_int(&v2, 122);
-        gst_value_array_append_value(&v, &v2);
-
-        g_object_set_property(G_OBJECT(rtpptdemux), "ignored-payload-types", &v);
-
-        g_value_unset(&v2);
-        g_value_unset(&v);
     }
 }
 
@@ -483,10 +443,6 @@ static void create_pipeline(StreamApp *app) {
 
         g_object_set(glsinkbin, "sink", app->appsink, NULL);
     }
-
-    //    GstPad *pad = gst_element_get_static_pad(gst_bin_get_by_name(GST_BIN(app->pipeline), "depay"), "src");
-    //    gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, (GstPadProbeCallback)buffer_probe_cb, NULL, NULL);
-    //    gst_object_unref(pad);
 
     g_autoptr(GstBus) bus = gst_element_get_bus(app->pipeline);
 
@@ -571,8 +527,8 @@ struct MySample *stream_app_try_pull_sample(StreamApp *app, struct timespec *out
         return NULL;
     }
 
-    // We actually pull the sample in the new-sample signal handler, so here we're just receiving the sample already
-    // pulled.
+    // We actually pull the sample in the new-sample signal handler,
+    // so here we're just receiving the sample already pulled.
     GstSample *sample = NULL;
     struct timespec decode_end;
     {
@@ -645,12 +601,12 @@ struct MySample *stream_app_try_pull_sample(StreamApp *app, struct timespec *out
     // Move sample ownership into the return value
     ret->sample = sample;
 
-    return ret;
+    return (struct MySample *)ret;
 }
 
 void stream_app_release_sample(StreamApp *app, struct MySample *sample) {
     struct MySampleImpl *impl = (struct MySampleImpl *)sample;
-    //    ALOGI("Releasing sample with texture ID %d", ems->frame_texture_id);
+    //    ALOGI("Releasing sample with texture ID %d", impl->base.frame_texture_id);
     gst_sample_unref(impl->sample);
     free(impl);
 }
