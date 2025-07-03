@@ -28,7 +28,6 @@ target_link_libraries(
         gst_stream_app
         gstreamer_android
         native_app_glue
-        Vulkan::Vulkan
         EGL::EGL
         OpenGLES::OpenGLESv3
         ${ANDROID_LIBRARY}
