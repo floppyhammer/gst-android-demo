@@ -369,7 +369,8 @@ static gboolean print_stats(StreamApp *app) {
     return G_SOURCE_CONTINUE;
 }
 
-static GstPadProbeReturn buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
+static GstPadProbeReturn
+rtp_buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
     if (info->type & GST_PAD_PROBE_TYPE_BUFFER) {
         GstBuffer *buf = GST_PAD_PROBE_INFO_BUFFER(info);
         GstClockTime pts = GST_BUFFER_PTS(buf);
@@ -381,17 +382,17 @@ static GstPadProbeReturn buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpo
             int64_t pts_diff = ((int64_t) pts - (int64_t) newest_pts) / 1e6;
 
             if (pts_diff < 0) {
-                ALOGE("Webrtcbin video src pad: buffer PTS: %" GST_TIME_FORMAT
+                ALOGE("Udpsrc video src pad: buffer PTS: %" GST_TIME_FORMAT
                               ", PTS diff: %ld. Bad packet: decreasing timestamp",
                       GST_TIME_ARGS(pts),
                       pts_diff);
             } else if (pts_diff > 50) {
-                ALOGE("Webrtcbin video src pad: buffer PTS: %" GST_TIME_FORMAT
+                ALOGE("Udpsrc video src pad: buffer PTS: %" GST_TIME_FORMAT
                               ", PTS diff: %ld. Bad packet: arrives too late",
                       GST_TIME_ARGS(pts),
                       pts_diff);
             } else {
-                ALOGD("Webrtcbin video src pad: buffer PTS: %" GST_TIME_FORMAT ", PTS diff: %ld",
+                ALOGD("Udpsrc video src pad: buffer PTS: %" GST_TIME_FORMAT ", PTS diff: %ld",
                       GST_TIME_ARGS(pts),
                       pts_diff);
             }
@@ -403,7 +404,7 @@ static GstPadProbeReturn buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpo
             if (map.size >= 12) {
                 guint8 *data = map.data;
                 uint32_t new_seq_num = (data[2] << 8) | data[3];
-                ALOGD("Webrtcbin video src pad: buffer sequence number: %u\n", new_seq_num);
+                ALOGD("Udpsrc video src pad: buffer sequence number: %u\n", new_seq_num);
 
                 if (new_seq_num - seq_num > 1) {
                     ALOGE("Packet lost!");
@@ -413,6 +414,39 @@ static GstPadProbeReturn buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpo
             }
             gst_buffer_unmap(buf, &map);
         }
+    }
+    return GST_PAD_PROBE_OK;
+}
+
+static GstPadProbeReturn
+h264_buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
+    if (info->type & GST_PAD_PROBE_TYPE_BUFFER) {
+        GstBuffer *buf = GST_PAD_PROBE_INFO_BUFFER(info);
+        GstClockTime pts = GST_BUFFER_PTS(buf);
+
+        static GstClockTime newest_pts = 0;
+        static uint32_t seq_num = 0;
+
+        if (newest_pts != 0) {
+            int64_t pts_diff = ((int64_t) pts - (int64_t) newest_pts) / 1e6;
+
+            if (pts_diff < 0) {
+                ALOGE("Depay video src pad: buffer PTS: %" GST_TIME_FORMAT
+                              ", PTS diff: %ld. Bad packet: decreasing timestamp",
+                      GST_TIME_ARGS(pts),
+                      pts_diff);
+            } else if (pts_diff > 50) {
+                ALOGE("Depay video src pad: buffer PTS: %" GST_TIME_FORMAT
+                              ", PTS diff: %ld. Bad packet: arrives too late",
+                      GST_TIME_ARGS(pts),
+                      pts_diff);
+            } else {
+                ALOGD("Depay video src pad: buffer PTS: %" GST_TIME_FORMAT ", PTS diff: %ld",
+                      GST_TIME_ARGS(pts),
+                      pts_diff);
+            }
+        }
+        newest_pts = newest_pts > pts ? newest_pts : pts;
     }
     return GST_PAD_PROBE_OK;
 }
@@ -428,7 +462,7 @@ static gboolean check_pipeline_dot_data(StreamApp *app) {
     return G_SOURCE_CONTINUE;
 }
 
-#define USE_DECODEBIN3
+//#define USE_DECODEBIN3
 
 static void create_pipeline_rtp(StreamApp *app) {
     GError *error = NULL;
@@ -438,7 +472,7 @@ static void create_pipeline_rtp(StreamApp *app) {
             "caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264\" ! "
             "rtpjitterbuffer do-lost=1 latency=0 ! "
             #ifndef USE_DECODEBIN3
-            "rtph264depay ! "
+            "rtph264depay name=depay ! "
             "h264parse ! "
             "amcviddec-c2mtkavcdecoder ! "
             "video/x-raw(memory:GLMemory),format=(string)RGBA,texture-target=(string)external-oes ! "
@@ -461,7 +495,21 @@ static void create_pipeline_rtp(StreamApp *app) {
         GstElement *udpsrc = gst_bin_get_by_name(GST_BIN(app->pipeline), "udp");
         GstPad *pad = gst_element_get_static_pad(udpsrc, "src");
         if (pad != NULL) {
-            gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, (GstPadProbeCallback) buffer_probe_cb,
+            gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER,
+                              (GstPadProbeCallback) rtp_buffer_probe_cb,
+                              NULL, NULL);
+            gst_object_unref(pad);
+        } else {
+            ALOGE("Could not find pad!");
+        }
+    }
+
+    {
+        GstElement *depay = gst_bin_get_by_name(GST_BIN(app->pipeline), "depay");
+        GstPad *pad = gst_element_get_static_pad(depay, "src");
+        if (pad != NULL) {
+            gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER,
+                              (GstPadProbeCallback) h264_buffer_probe_cb,
                               NULL, NULL);
             gst_object_unref(pad);
         } else {
