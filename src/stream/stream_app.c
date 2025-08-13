@@ -388,7 +388,7 @@ static void create_pipeline_rtp(StreamApp *app) {
     gchar *pipeline_string = g_strdup_printf(
             "udpsrc port=5600 buffer-size=8000000 "
             "caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264\" ! "
-            "rtpjitterbuffer do-lost=1 latency=50 ! "
+            "rtpjitterbuffer do-lost=1 latency=0 ! "
             #ifndef USE_DECODEBIN3
             "rtph264depay ! "
             "h264parse ! "
