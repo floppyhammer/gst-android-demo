@@ -382,17 +382,17 @@ rtp_buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
             int64_t pts_diff = ((int64_t) pts - (int64_t) newest_pts) / 1e6;
 
             if (pts_diff < 0) {
-                ALOGE("Udpsrc video src pad: buffer PTS: %" GST_TIME_FORMAT
-                              ", PTS diff: %ld. Bad packet: decreasing timestamp",
+                ALOGE("Udpsrc src pad: buffer PTS: %" GST_TIME_FORMAT
+                              " | PTS diff: %ld. Bad packet: decreasing timestamp",
                       GST_TIME_ARGS(pts),
                       pts_diff);
             } else if (pts_diff > 50) {
-                ALOGE("Udpsrc video src pad: buffer PTS: %" GST_TIME_FORMAT
-                              ", PTS diff: %ld. Bad packet: arrives too late",
+                ALOGE("Udpsrc src pad: buffer PTS: %" GST_TIME_FORMAT
+                              " | PTS diff: %ld. Bad packet: arrives too late",
                       GST_TIME_ARGS(pts),
                       pts_diff);
             } else {
-                ALOGD("Udpsrc video src pad: buffer PTS: %" GST_TIME_FORMAT ", PTS diff: %ld",
+                ALOGD("Udpsrc src pad: buffer PTS: %" GST_TIME_FORMAT ", PTS diff: %ld",
                       GST_TIME_ARGS(pts),
                       pts_diff);
             }
@@ -404,7 +404,7 @@ rtp_buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
             if (map.size >= 12) {
                 guint8 *data = map.data;
                 uint32_t new_seq_num = (data[2] << 8) | data[3];
-                ALOGD("Udpsrc video src pad: buffer sequence number: %u\n", new_seq_num);
+                ALOGD("Udpsrc src pad: buffer sequence number: %u\n", new_seq_num);
 
                 if (new_seq_num - seq_num > 1) {
                     ALOGE("Packet lost!");
@@ -431,17 +431,17 @@ h264_buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
             int64_t pts_diff = ((int64_t) pts - (int64_t) newest_pts) / 1e6;
 
             if (pts_diff < 0) {
-                ALOGE("Depay video src pad: buffer PTS: %" GST_TIME_FORMAT
-                              ", PTS diff: %ld. Bad packet: decreasing timestamp",
+                ALOGE("Depay src pad: buffer PTS: %" GST_TIME_FORMAT
+                              " | PTS diff: %ld. Bad packet: decreasing timestamp",
                       GST_TIME_ARGS(pts),
                       pts_diff);
             } else if (pts_diff > 50) {
-                ALOGE("Depay video src pad: buffer PTS: %" GST_TIME_FORMAT
-                              ", PTS diff: %ld. Bad packet: arrives too late",
+                ALOGE("Depay src pad: buffer PTS: %" GST_TIME_FORMAT
+                              " | PTS diff: %ld. Bad packet: arrives too late",
                       GST_TIME_ARGS(pts),
                       pts_diff);
             } else {
-                ALOGD("Depay video src pad: buffer PTS: %" GST_TIME_FORMAT ", PTS diff: %ld",
+                ALOGD("Depay src pad: buffer PTS: %" GST_TIME_FORMAT ", PTS diff: %ld",
                       GST_TIME_ARGS(pts),
                       pts_diff);
             }
