@@ -477,6 +477,7 @@ static void create_pipeline_rtp(StreamApp *app) {
             "amcviddec-c2mtkavcdecoder ! "
             "video/x-raw(memory:GLMemory),format=(string)RGBA,texture-target=(string)external-oes ! "
             #else
+            "rtph264depay name=depay ! "
             "decodebin3 ! "
             #endif
             "glsinkbin name=glsink");
