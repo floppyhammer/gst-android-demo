@@ -66,8 +66,7 @@ typedef void *(*os_run_func_t)(void *);
  *
  * @public @memberof os_thread_helper
  */
-static inline int
-os_thread_helper_start(struct os_thread_helper *oth, os_run_func_t func, void *ptr) {
+static inline int os_thread_helper_start(struct os_thread_helper *oth, os_run_func_t func, void *ptr) {
     pthread_mutex_lock(&oth->mutex);
 
     g_assert(oth->initialized);
@@ -193,8 +192,7 @@ static void stream_app_init(StreamApp *app) {
     ALOGI("%s: done creating stuff", __FUNCTION__);
 }
 
-void stream_app_set_egl_context(StreamApp *app, EGLContext context, EGLDisplay display,
-                                EGLSurface surface) {
+void stream_app_set_egl_context(StreamApp *app, EGLContext context, EGLDisplay display, EGLSurface surface) {
     ALOGI("Wrapping egl context");
 
     app->egl.display = display;
@@ -206,8 +204,7 @@ void stream_app_set_egl_context(StreamApp *app, EGLContext context, EGLDisplay d
     GstGLAPI gl_api = gst_gl_context_get_current_gl_api(egl_platform, NULL, NULL);
     app->gst_gl_display = g_object_ref_sink(gst_gl_display_new());
     app->android_main_context = g_object_ref_sink(
-            gst_gl_context_new_wrapped(app->gst_gl_display, android_main_egl_context_handle,
-                                       egl_platform, gl_api));
+        gst_gl_context_new_wrapped(app->gst_gl_display, android_main_egl_context_handle, egl_platform, gl_api));
 }
 
 static void stream_app_dispose(StreamApp *self) {
@@ -281,8 +278,7 @@ static gboolean gst_bus_cb(GstBus *bus, GstMessage *message, gpointer user_data)
             g_error("gst_bus_cb: Error: %s (%s)", gerr->message, debug_msg);
             g_error_free(gerr);
             g_free(debug_msg);
-        }
-            break;
+        } break;
         case GST_MESSAGE_WARNING: {
             GError *gerr = NULL;
             gchar *debug_msg = NULL;
@@ -292,12 +288,10 @@ static gboolean gst_bus_cb(GstBus *bus, GstMessage *message, gpointer user_data)
             g_warning("gst_bus_cb: Warning: %s (%s)", gerr->message, debug_msg);
             g_error_free(gerr);
             g_free(debug_msg);
-        }
-            break;
+        } break;
         case GST_MESSAGE_EOS: {
             g_error("gst_bus_cb: Got EOS!");
-        }
-            break;
+        } break;
         default:
             break;
     }
@@ -305,7 +299,7 @@ static gboolean gst_bus_cb(GstBus *bus, GstMessage *message, gpointer user_data)
 }
 
 static GstFlowReturn on_new_sample_cb(GstAppSink *appsink, gpointer user_data) {
-    StreamApp *app = (StreamApp *) user_data;
+    StreamApp *app = (StreamApp *)user_data;
 
     // TODO record the frame ID, get frame pose
     struct timespec ts;
@@ -369,8 +363,7 @@ static gboolean print_stats(StreamApp *app) {
     return G_SOURCE_CONTINUE;
 }
 
-static GstPadProbeReturn
-rtp_buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
+static GstPadProbeReturn rtp_buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
     if (info->type & GST_PAD_PROBE_TYPE_BUFFER) {
         GstBuffer *buf = GST_PAD_PROBE_INFO_BUFFER(info);
         GstClockTime pts = GST_BUFFER_PTS(buf);
@@ -379,23 +372,23 @@ rtp_buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
         static uint32_t seq_num = 0;
 
         if (newest_pts != 0) {
-            int64_t pts_diff = ((int64_t) pts - (int64_t) newest_pts) / 1e6;
+            int64_t pts_diff = ((int64_t)pts - (int64_t)newest_pts) / 1e6;
 
-            if (pts_diff < 0) {
-                ALOGE("Udpsrc src pad: buffer PTS: %" GST_TIME_FORMAT
-                              " | PTS diff: %ld. Bad packet: decreasing timestamp",
-                      GST_TIME_ARGS(pts),
-                      pts_diff);
-            } else if (pts_diff > 50) {
-                ALOGE("Udpsrc src pad: buffer PTS: %" GST_TIME_FORMAT
-                              " | PTS diff: %ld. Bad packet: arrives too late",
-                      GST_TIME_ARGS(pts),
-                      pts_diff);
-            } else {
-                ALOGD("Udpsrc src pad: buffer PTS: %" GST_TIME_FORMAT ", PTS diff: %ld",
-                      GST_TIME_ARGS(pts),
-                      pts_diff);
-            }
+            //            if (pts_diff < 0) {
+            //                ALOGE("Udpsrc src pad: buffer PTS: %" GST_TIME_FORMAT
+            //                              " | PTS diff: %ld. Bad packet: decreasing timestamp",
+            //                      GST_TIME_ARGS(pts),
+            //                      pts_diff);
+            //            } else if (pts_diff > 50) {
+            //                ALOGE("Udpsrc src pad: buffer PTS: %" GST_TIME_FORMAT
+            //                              " | PTS diff: %ld. Bad packet: arrives too late",
+            //                      GST_TIME_ARGS(pts),
+            //                      pts_diff);
+            //            } else {
+            //                ALOGD("Udpsrc src pad: buffer PTS: %" GST_TIME_FORMAT ", PTS diff: %ld",
+            //                      GST_TIME_ARGS(pts),
+            //                      pts_diff);
+            //            }
         }
         newest_pts = newest_pts > pts ? newest_pts : pts;
 
@@ -404,7 +397,7 @@ rtp_buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
             if (map.size >= 12) {
                 guint8 *data = map.data;
                 uint32_t new_seq_num = (data[2] << 8) | data[3];
-                ALOGD("Udpsrc src pad: buffer sequence number: %u\n", new_seq_num);
+                //                ALOGD("Udpsrc src pad: buffer sequence number: %u\n", new_seq_num);
 
                 if (new_seq_num - seq_num > 1) {
                     ALOGE("Packet lost!");
@@ -418,8 +411,7 @@ rtp_buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
     return GST_PAD_PROBE_OK;
 }
 
-static GstPadProbeReturn
-h264_buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
+static GstPadProbeReturn h264_buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
     if (info->type & GST_PAD_PROBE_TYPE_BUFFER) {
         GstBuffer *buf = GST_PAD_PROBE_INFO_BUFFER(info);
         GstClockTime pts = GST_BUFFER_PTS(buf);
@@ -428,22 +420,19 @@ h264_buffer_probe_cb(GstPad *pad, GstPadProbeInfo *info, gpointer user_data) {
         static uint32_t seq_num = 0;
 
         if (newest_pts != 0) {
-            int64_t pts_diff = ((int64_t) pts - (int64_t) newest_pts) / 1e6;
+            int64_t pts_diff = ((int64_t)pts - (int64_t)newest_pts) / 1e6;
 
             if (pts_diff < 0) {
                 ALOGE("Depay src pad: buffer PTS: %" GST_TIME_FORMAT
-                              " | PTS diff: %ld. Bad packet: decreasing timestamp",
+                      " | PTS diff: %ld. Bad packet: decreasing timestamp",
                       GST_TIME_ARGS(pts),
                       pts_diff);
             } else if (pts_diff > 50) {
-                ALOGE("Depay src pad: buffer PTS: %" GST_TIME_FORMAT
-                              " | PTS diff: %ld. Bad packet: arrives too late",
+                ALOGE("Depay src pad: buffer PTS: %" GST_TIME_FORMAT " | PTS diff: %ld. Bad packet: arrives too late",
                       GST_TIME_ARGS(pts),
                       pts_diff);
             } else {
-                ALOGD("Depay src pad: buffer PTS: %" GST_TIME_FORMAT ", PTS diff: %ld",
-                      GST_TIME_ARGS(pts),
-                      pts_diff);
+                ALOGD("Depay src pad: buffer PTS: %" GST_TIME_FORMAT ", PTS diff: %ld", GST_TIME_ARGS(pts), pts_diff);
             }
         }
         newest_pts = newest_pts > pts ? newest_pts : pts;
@@ -462,25 +451,118 @@ static gboolean check_pipeline_dot_data(StreamApp *app) {
     return G_SOURCE_CONTINUE;
 }
 
-//#define USE_DECODEBIN3
+typedef enum {
+    MY_ENCODER_TYPE_X264,
+    MY_ENCODER_TYPE_AMC,
+    MY_ENCODER_TYPE_AUTO,
+} MyEncoderType;
 
-static void create_pipeline_rtp(StreamApp *app) {
+gboolean check_element_exists(const gchar *element_name) {
+    GstElementFactory *factory;
+
+    // Find the element factory by name
+    factory = gst_element_factory_find(element_name);
+
+    if (factory == NULL) {
+        ALOGW("Element '%s' does not exist.", element_name);
+        return FALSE;
+    } else {
+        ALOGI("Element '%s' exists.", element_name);
+        gst_object_unref(factory); // Unref the factory after use
+        return TRUE;
+    }
+}
+
+static void create_sender_pipeline(StreamApp *app) {
+    MyEncoderType encoder_type = MY_ENCODER_TYPE_AUTO;
+    uint32_t bitrate = 8000;
+
+    gchar *encoder_str = NULL;
+    if (encoder_type == MY_ENCODER_TYPE_X264) {
+        encoder_str = g_strdup_printf(
+            "videoconvert ! "
+            "videorate ! "
+            "video/x-raw,format=NV12 ! "
+            // Removing this queue will result in readback errors (Gst can't keep up consuming) and introduce 4x
+            // latency This does not seem to happen for GPU encoders.
+            "queue ! "
+            "x264enc name=enc tune=zerolatency sliced-threads=true speed-preset=ultrafast bframes=0 bitrate=%d ! "
+            "video/x-h264,profile=main",
+            bitrate);
+    } else if (encoder_type == MY_ENCODER_TYPE_AMC) {
+        const char *encoder_name = NULL;
+        if (check_element_exists("amcvidenc-c2qtiavcencoder")) {
+            encoder_name = "amcvidenc-c2qtiavcencoder";
+        } else if (check_element_exists("amcvidenc-c2mtkavcencoder")) {
+            encoder_name = "amcvidenc-c2mtkavcencoder";
+        } else {
+            ALOGE("No available AMC encoder, exiting");
+            abort();
+        }
+
+        ALOGI("Using AMC encoder: %s", encoder_name);
+
+        encoder_str = g_strdup_printf(
+            "videoconvert ! "
+            "videorate ! "
+            "video/x-raw,format=NV12 ! "
+            "%s name=enc bitrate=%d ! "
+            "video/x-h264,profile=high ! " // Any other profiles won't work!
+            "h264parse",
+            encoder_name,
+            bitrate);
+    } else if (encoder_type == MY_ENCODER_TYPE_AUTO) {
+        encoder_str = g_strdup_printf(
+            "videoconvert ! "
+            "video/x-raw,format=NV12 ! "
+            "encodebin2 profile=\"video/"
+            "x-h264|element-properties,tune=4,sliced-threads=1,speed-preset=1,bframes=0,bitrate=%d,key-int-max=120\"",
+            bitrate);
+    } else {
+        ALOGE("Unexpected encoder type.");
+        abort();
+    }
+
+    gchar *pipeline_string = g_strdup_printf(
+        "videotestsrc pattern=colors is-live=true horizontal-speed=2 ! "
+        "video/x-raw,format=NV12,width=1280,height=720,framerate=60/1 ! "
+        "videoconvert ! "
+        //        "timeoverlay ! "
+        "%s ! "
+        "rtph264pay name=rtppay config-interval=-1 aggregate-mode=zero-latency ! "
+        "application/x-rtp,payload=96,ssrc=(uint)3484078952 ! "
+        "udpsink name=udpsink host=10.11.9.210 port=5600 sync=false async=false",
+        encoder_str);
+
+    GError *error = NULL;
+    app->pipeline = gst_object_ref_sink(gst_parse_launch(pipeline_string, &error));
+    if (app->pipeline == NULL) {
+        ALOGE("Failed creating pipeline : Bad source: %s", error->message);
+        abort();
+    }
+    if (error) {
+        ALOGE("Error creating a pipeline from string: %s", error ? error->message : "Unknown");
+        abort();
+    }
+}
+
+#define USE_DECODEBIN3
+static void create_receiver_pipeline(StreamApp *app) {
     GError *error = NULL;
 
     gchar *pipeline_string = g_strdup_printf(
-            "udpsrc port=5600 buffer-size=8000000 name=udp "
-            "caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264\" ! "
-            "rtpjitterbuffer do-lost=1 latency=0 ! "
-            #ifndef USE_DECODEBIN3
-            "rtph264depay name=depay ! "
-            "h264parse ! "
-            "amcviddec-c2mtkavcdecoder ! "
-            "video/x-raw(memory:GLMemory),format=(string)RGBA,texture-target=(string)external-oes ! "
-            #else
-            "rtph264depay name=depay ! "
-            "decodebin3 ! "
-            #endif
-            "glsinkbin name=glsink");
+        "udpsrc port=5600 buffer-size=8000000 name=udp "
+        "caps=\"application/x-rtp,media=video,clock-rate=90000,encoding-name=H264\" ! "
+        "rtpjitterbuffer do-lost=1 latency=200 ! "
+        "rtph264depay name=depay ! "
+#ifndef USE_DECODEBIN3
+        "h264parse ! "
+        "amcviddec-c2mtkavcdecoder ! "
+        "video/x-raw(memory:GLMemory),format=(string)RGBA,texture-target=(string)external-oes ! "
+#else
+        "decodebin3 ! "
+#endif
+        "glsinkbin name=glsink");
 
     app->pipeline = gst_object_ref_sink(gst_parse_launch(pipeline_string, &error));
     if (app->pipeline == NULL) {
@@ -492,41 +574,31 @@ static void create_pipeline_rtp(StreamApp *app) {
         abort();
     }
 
-    {
-        GstElement *udpsrc = gst_bin_get_by_name(GST_BIN(app->pipeline), "udp");
+    GstElement *udpsrc = gst_bin_get_by_name(GST_BIN(app->pipeline), "udp");
+    if (udpsrc) {
         GstPad *pad = gst_element_get_static_pad(udpsrc, "src");
         if (pad != NULL) {
-            gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER,
-                              (GstPadProbeCallback) rtp_buffer_probe_cb,
-                              NULL, NULL);
+            gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, (GstPadProbeCallback)rtp_buffer_probe_cb, NULL, NULL);
             gst_object_unref(pad);
         } else {
             ALOGE("Could not find pad!");
         }
+
+        gst_object_unref(udpsrc);
     }
 
-    {
-        GstElement *depay = gst_bin_get_by_name(GST_BIN(app->pipeline), "depay");
+    GstElement *depay = gst_bin_get_by_name(GST_BIN(app->pipeline), "depay");
+    if (depay) {
         GstPad *pad = gst_element_get_static_pad(depay, "src");
         if (pad != NULL) {
-            gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER,
-                              (GstPadProbeCallback) h264_buffer_probe_cb,
-                              NULL, NULL);
+            gst_pad_add_probe(pad, GST_PAD_PROBE_TYPE_BUFFER, (GstPadProbeCallback)h264_buffer_probe_cb, NULL, NULL);
             gst_object_unref(pad);
         } else {
             ALOGE("Could not find pad!");
         }
+
+        gst_object_unref(depay);
     }
-}
-
-static void create_pipeline(StreamApp *app) {
-    g_assert_nonnull(app);
-
-    GError *error = NULL;
-
-    // We'll need an active egl context below before setting up gstgl (as explained previously)
-
-    create_pipeline_rtp(app);
 
     GstElement *glsinkbin = gst_bin_get_by_name(GST_BIN(app->pipeline), "glsink");
 
@@ -547,16 +619,16 @@ static void create_pipeline(StreamApp *app) {
         //       manually link them below using glsinkbin's 'sink' pad -> appsink.
         app->appsink = gst_element_factory_make("appsink", NULL);
         g_object_set(app->appsink,
-                // Set caps
+                     // Set caps
                      "caps",
                      caps,
-                // Fixed size buffer
+                     // Fixed size buffer
                      "max-buffers",
                      1,
-                // Drop old buffers when queue is filled
+                     // Drop old buffers when queue is filled
                      "drop",
                      true,
-                // Terminator
+                     // Terminator
                      NULL);
 
         // Lower overhead than new-sample signal.
@@ -571,15 +643,22 @@ static void create_pipeline(StreamApp *app) {
     g_autoptr(GstBus) bus = gst_element_get_bus(app->pipeline);
 
     // We set this up to inject the EGL context
-    gst_bus_set_sync_handler(bus, (GstBusSyncHandler) bus_sync_handler_cb, app, NULL);
+    gst_bus_set_sync_handler(bus, (GstBusSyncHandler)bus_sync_handler_cb, app, NULL);
 
     // This just watches for errors and such
     gst_bus_add_watch(bus, gst_bus_cb, app->pipeline);
     g_object_unref(bus);
 
-    app->timeout_src_id_dot_data = g_timeout_add_seconds(3, G_SOURCE_FUNC(check_pipeline_dot_data),
-                                                         app);
+    app->timeout_src_id_dot_data = g_timeout_add_seconds(3, G_SOURCE_FUNC(check_pipeline_dot_data), app);
     app->timeout_src_id_print_stats = g_timeout_add_seconds(3, G_SOURCE_FUNC(print_stats), app);
+}
+
+static void create_pipeline(StreamApp *app) {
+    g_assert_nonnull(app);
+
+    // We'll need an active egl context below before setting up gst_gl (as explained previously)
+
+    create_sender_pipeline(app);
 }
 
 static void drop_pipeline(StreamApp *app) {
@@ -591,7 +670,7 @@ static void drop_pipeline(StreamApp *app) {
 }
 
 static void *stream_app_thread_func(void *ptr) {
-    StreamApp *app = (StreamApp *) ptr;
+    StreamApp *app = (StreamApp *)ptr;
 
     create_pipeline(app);
     g_assert(gst_element_set_state(app->pipeline, GST_STATE_PLAYING) != GST_STATE_CHANGE_FAILURE);
@@ -630,7 +709,7 @@ void stream_app_destroy(StreamApp **ptr_app) {
 void stream_app_spawn_thread(StreamApp *app) {
     ALOGI("%s: Starting stream client mainloop thread", __FUNCTION__);
     int ret = os_thread_helper_start(&app->play_thread, &stream_app_thread_func, app);
-    (void) ret;
+    (void)ret;
     g_assert(ret == 0);
 }
 
@@ -692,9 +771,9 @@ struct MySample *stream_app_try_pull_sample(StreamApp *app, struct timespec *out
     struct MySampleImpl *ret = calloc(1, sizeof(struct MySampleImpl));
 
     GstVideoFrame frame;
-    GstMapFlags flags = (GstMapFlags) (GST_MAP_READ | GST_MAP_GL);
+    GstMapFlags flags = (GstMapFlags)(GST_MAP_READ | GST_MAP_GL);
     gst_video_frame_map(&frame, &info, buffer, flags);
-    ret->base.frame_texture_id = *(GLuint *) frame.data[0];
+    ret->base.frame_texture_id = *(GLuint *)frame.data[0];
 
     if (app->context == NULL) {
         ALOGI("%s: Retrieving the GStreamer EGL context", __FUNCTION__);
@@ -726,11 +805,11 @@ struct MySample *stream_app_try_pull_sample(StreamApp *app, struct timespec *out
     // Move sample ownership into the return value
     ret->sample = sample;
 
-    return (struct MySample *) ret;
+    return (struct MySample *)ret;
 }
 
 void stream_app_release_sample(StreamApp *app, struct MySample *sample) {
-    struct MySampleImpl *impl = (struct MySampleImpl *) sample;
+    struct MySampleImpl *impl = (struct MySampleImpl *)sample;
     //    ALOGI("Releasing sample with texture ID %d", impl->base.frame_texture_id);
     gst_sample_unref(impl->sample);
     free(impl);

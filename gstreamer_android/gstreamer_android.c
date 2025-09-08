@@ -33,6 +33,11 @@ GST_PLUGIN_STATIC_DECLARE(audioresample);
 GST_PLUGIN_STATIC_DECLARE(opensles);
 GST_PLUGIN_STATIC_DECLARE(opus);
 GST_PLUGIN_STATIC_DECLARE(udp);
+GST_PLUGIN_STATIC_DECLARE(x264);
+GST_PLUGIN_STATIC_DECLARE(encoding);
+GST_PLUGIN_STATIC_DECLARE(videorate);
+// To use timeoverlay
+GST_PLUGIN_STATIC_DECLARE(pango);
 /* Declaration of static gio modules */
 
 /* Call this function to load GIO modules */
@@ -81,5 +86,9 @@ void gst_init_static_plugins(void) {
     GST_PLUGIN_STATIC_REGISTER(opensles);
     GST_PLUGIN_STATIC_REGISTER(opus);
     GST_PLUGIN_STATIC_REGISTER(udp);
+    GST_PLUGIN_STATIC_REGISTER(x264);
+    GST_PLUGIN_STATIC_REGISTER(encoding);
+    GST_PLUGIN_STATIC_REGISTER(videorate);
+    GST_PLUGIN_STATIC_REGISTER(pango);
     gst_android_load_gio_modules();
 }

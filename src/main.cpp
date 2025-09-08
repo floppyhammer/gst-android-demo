@@ -51,17 +51,19 @@ StreamApp *stream_app{};
 
 MyState _state = {};
 
-void gstAndroidLog(GstDebugCategory *category,
-                   GstDebugLevel level,
-                   const gchar *file,
-                   const gchar *function,
-                   gint line,
-                   GObject *object,
-                   GstDebugMessage *message,
-                   gpointer data) {
+void gst_android_log(GstDebugCategory *category,
+                     GstDebugLevel level,
+                     const gchar *file,
+                     const gchar *function,
+                     gint line,
+                     GObject *object,
+                     GstDebugMessage *message,
+                     gpointer data) {
     if (level <= gst_debug_category_get_threshold(category)) {
         if (level == GST_LEVEL_ERROR) {
             ALOGE("%s, %s: %s", file, function, gst_debug_message_get(message));
+        } else if (level == GST_LEVEL_WARNING) {
+            ALOGW("%s, %s: %s", file, function, gst_debug_message_get(message));
         } else {
             ALOGD("%s, %s: %s", file, function, gst_debug_message_get(message));
         }
@@ -100,23 +102,11 @@ void onAppCmd(struct android_app *app, int32_t cmd) {
             gst_init(NULL, NULL);
 
 #ifdef __ANDROID__
-            gst_debug_add_log_function(&gstAndroidLog, NULL, NULL);
+            gst_debug_add_log_function(&gst_android_log, NULL, NULL);
 #endif
 
             // Set up gst logger
-            //            gst_debug_set_default_threshold(GST_LEVEL_WARNING);
-            //		gst_debug_set_threshold_for_name("webrtcbin", GST_LEVEL_MEMDUMP);
-            //      gst_debug_set_threshold_for_name("webrtcbindatachannel", GST_LEVEL_TRACE);
-
-            // Set rank for decoder c2qtiavcdecoder
-            GstRegistry *plugins_register = gst_registry_get();
-            GstPluginFeature *dec = gst_registry_lookup_feature(plugins_register, "amcviddec-c2qtiavcdecoder");
-            if (dec == NULL) {
-                ALOGW("c2qtiavcdecoder not available!");
-            } else {
-                gst_plugin_feature_set_rank(dec, GST_RANK_PRIMARY + 1);
-                gst_object_unref(dec);
-            }
+            gst_debug_set_default_threshold(GST_LEVEL_WARNING);
 
             stream_app = stream_app_new();
             stream_app_set_egl_context(stream_app,
@@ -159,7 +149,7 @@ bool poll_events(struct android_app *app) {
         struct android_poll_source *source;
         bool wait = !app->window || app->activityState != APP_CMD_RESUME;
         int timeout = wait ? -1 : 0;
-        if (ALooper_pollAll(timeout, NULL, &events, (void **)&source) >= 0) {
+        if (ALooper_pollOnce(timeout, NULL, &events, (void **)&source) >= 0) {
             if (source) {
                 source->process(app, source);
             }
