@@ -504,7 +504,6 @@ static void create_sender_pipeline(StreamApp *app) {
 
         encoder_str = g_strdup_printf(
             "videoconvert ! "
-            "videorate ! "
             "video/x-raw,format=NV12 ! "
             "%s name=enc bitrate=%d ! "
             "video/x-h264,profile=high ! " // Any other profiles won't work!
@@ -526,8 +525,6 @@ static void create_sender_pipeline(StreamApp *app) {
     gchar *pipeline_string = g_strdup_printf(
         "videotestsrc pattern=colors is-live=true horizontal-speed=2 ! "
         "video/x-raw,format=NV12,width=1280,height=720,framerate=60/1 ! "
-        "videoconvert ! "
-        //        "timeoverlay ! "
         "%s ! "
         "rtph264pay name=rtppay config-interval=-1 aggregate-mode=zero-latency ! "
         "application/x-rtp,payload=96,ssrc=(uint)3484078952 ! "
